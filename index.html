@@ -1,0 +1,2859 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Investimento | Magalhães Negócios</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.8);
+            --border-color: #334155;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --emerald: #d4a537;
+            --emerald-dark: #8b6914;
+            --cyan: #1e40af;
+            --blue: #1e40af;
+            --amber: #b91c1c;
+            --red: #ef4444;
+            --purple: #8b5cf6;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #0c1222 50%, var(--bg-primary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Background Effects */
+        .bg-effects {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-effects::before,
+        .bg-effects::after {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.5;
+        }
+
+        .bg-effects::before {
+            top: -200px;
+            left: 20%;
+            background: rgba(16, 185, 129, 0.08);
+        }
+
+        .bg-effects::after {
+            bottom: -200px;
+            right: 20%;
+            background: rgba(6, 182, 212, 0.08);
+        }
+
+        /* Container */
+        .container {
+            position: relative;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 9999px;
+            color: var(--emerald);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--emerald);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #a7f3d0 50%, #67e8f9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Client Bar */
+        .client-bar {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .client-input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .client-input-group label {
+            display: block;
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .client-input-group input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 0.25rem 0;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .client-input-group input:focus {
+            border-color: var(--emerald);
+        }
+
+        .client-input-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-whatsapp { background: #22c55e; color: white; }
+        .btn-whatsapp:hover { background: #16a34a; transform: translateY(-2px); }
+
+        .btn-pdf { background: var(--blue); color: white; }
+        .btn-pdf:hover { background: #2563eb; transform: translateY(-2px); }
+
+        .btn-present { background: var(--purple); color: white; }
+        .btn-present:hover { background: #7c3aed; transform: translateY(-2px); }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            background: rgba(30, 41, 59, 0.5);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--emerald) 0%, var(--cyan) 100%);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-3 { grid-template-columns: 1fr; }
+        .grid-4 { grid-template-columns: repeat(2, 1fr); }
+
+        @media (min-width: 768px) {
+            .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        @media (min-width: 1024px) {
+            .grid-3 { grid-template-columns: 1fr 2fr; }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+
+        .card-highlight {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.1);
+        }
+
+        .card-blue {
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .card-title-icon {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .card-title-icon.amber { background: rgba(245, 158, 11, 0.2); }
+        .card-title-icon.blue { background: rgba(59, 130, 246, 0.2); }
+        .card-title-icon.purple { background: rgba(139, 92, 246, 0.2); }
+        .card-title-icon.red { background: rgba(239, 68, 68, 0.2); }
+
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--emerald);
+        }
+
+        .input-wrapper span {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.125rem;
+            font-weight: 700;
+            outline: none;
+            width: 100%;
+        }
+
+        .input-wrapper input::-webkit-outer-spin-button,
+        .input-wrapper input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+
+        .kpi-card.highlight {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.1);
+        }
+
+        .kpi-label {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .kpi-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-top: 0.25rem;
+        }
+
+        .kpi-value.emerald { color: var(--emerald); }
+        .kpi-value.cyan { color: var(--cyan); }
+        .kpi-value.amber { color: var(--amber); }
+
+        .kpi-sub {
+            font-size: 0.75rem;
+            color: var(--emerald);
+            margin-top: 0.25rem;
+        }
+
+        .kpi-sub.amber { color: var(--amber); }
+
+        /* Chart Container */
+        .chart-container {
+            height: 250px;
+            margin-top: 1rem;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 1.75rem;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            top: 1.75rem;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--emerald), var(--cyan));
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-icon {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-icon.emerald { background: var(--emerald); }
+        .timeline-icon.amber { background: var(--amber); }
+        .timeline-icon.blue { background: var(--blue); }
+        .timeline-icon.gradient { background: linear-gradient(135deg, var(--emerald), var(--cyan)); }
+
+        .timeline-label {
+            font-size: 0.625rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .timeline-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .timeline-value {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .timeline-value.emerald { color: var(--emerald); }
+        .timeline-value.amber { color: var(--amber); }
+        .timeline-value.blue { color: var(--blue); }
+
+        /* Scenario Cards */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .scenario-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .scenario-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+
+        .scenario-card.emerald {
+            background: linear-gradient(135deg, rgba(6, 78, 59, 0.6), rgba(6, 78, 59, 0.3));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .scenario-card.blue {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.6), rgba(30, 58, 138, 0.3));
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .scenario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .scenario-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+        }
+
+        .scenario-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.625rem;
+        }
+
+        .scenario-badge.emerald {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--emerald);
+        }
+
+        .scenario-badge.blue {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--blue);
+        }
+
+        .scenario-rows {
+            font-size: 0.875rem;
+        }
+
+        .scenario-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .scenario-row span:first-child {
+            color: var(--text-secondary);
+        }
+
+        .scenario-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            text-align: center;
+        }
+
+        .scenario-result.emerald {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .scenario-result.blue {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .scenario-result-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .scenario-result-label.emerald { color: var(--emerald); }
+        .scenario-result-label.blue { color: var(--blue); }
+
+        .scenario-result-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+
+        .scenario-result-value.emerald { color: var(--emerald); }
+        .scenario-result-value.blue { color: var(--blue); }
+
+        .scenario-result-sub {
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .scenario-result-sub.emerald { color: rgba(16, 185, 129, 0.8); }
+        .scenario-result-sub.blue { color: rgba(59, 130, 246, 0.8); }
+
+        /* Score */
+        .score-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .score-circle {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .score-circle svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-circle-bg {
+            fill: none;
+            stroke: var(--bg-secondary);
+            stroke-width: 10;
+        }
+
+        .score-circle-progress {
+            fill: none;
+            stroke: url(#scoreGradient);
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-dasharray: 314;
+            stroke-dashoffset: 62.8;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .score-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--emerald), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .score-max {
+            font-size: 0.625rem;
+            color: var(--text-muted);
+        }
+
+        .score-label {
+            margin-top: 0.75rem;
+            font-weight: 600;
+            color: var(--emerald);
+        }
+
+        .score-tip {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 0.25rem;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th:not(:first-child) {
+            text-align: right;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        td:not(:first-child) {
+            text-align: right;
+        }
+
+        tr:hover {
+            background: rgba(30, 41, 59, 0.3);
+        }
+
+        .text-emerald { color: var(--emerald); }
+        .text-amber { color: var(--amber); }
+        .text-red { color: var(--red); }
+        .text-blue { color: var(--blue); }
+        .text-cyan { color: var(--cyan); }
+
+        /* Conclusion Box */
+        .conclusion-box {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .conclusion-icon {
+            font-size: 3rem;
+        }
+
+        .conclusion-content h3 {
+            color: var(--emerald);
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .conclusion-content p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .conclusion-highlight {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--cyan);
+        }
+
+        /* Comparator */
+        .comparator-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .comparator-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .comparator-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+
+        .comparator-card.emerald { border: 1px solid rgba(16, 185, 129, 0.3); }
+        .comparator-card.blue { border: 1px solid rgba(59, 130, 246, 0.3); }
+        .comparator-card.purple { border: 1px solid rgba(139, 92, 246, 0.3); }
+
+        .comparator-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .comparator-header.emerald { color: var(--emerald); }
+        .comparator-header.blue { color: var(--blue); }
+        .comparator-header.purple { color: var(--purple); }
+
+        .comparator-num {
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .comparator-num.emerald { background: var(--emerald); }
+        .comparator-num.blue { background: var(--blue); }
+        .comparator-num.purple { background: var(--purple); }
+
+        .comparator-input {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            outline: none;
+            margin-bottom: 0.75rem;
+        }
+
+        .comparator-input:focus {
+            border-color: var(--emerald);
+        }
+
+        .comparator-result {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .comparator-result.emerald { background: rgba(16, 185, 129, 0.1); }
+        .comparator-result.blue { background: rgba(59, 130, 246, 0.1); }
+        .comparator-result.purple { background: rgba(139, 92, 246, 0.1); }
+
+        /* Ranking */
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .ranking-item.winner {
+            border: 2px solid rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+
+        .ranking-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .ranking-medal {
+            font-size: 1.5rem;
+        }
+
+        .ranking-name {
+            font-weight: 600;
+        }
+
+        .ranking-details {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .ranking-right {
+            text-align: right;
+        }
+
+        .ranking-roi {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .ranking-profit {
+            font-size: 0.875rem;
+        }
+
+        /* Cost Section */
+        .cost-result {
+            background: var(--bg-card);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .cost-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .cost-header h3 {
+            font-size: 1.25rem;
+        }
+
+        .cost-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cost-box {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            text-align: center;
+        }
+
+        .cost-box.today {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .cost-box.future {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .cost-box-label {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .cost-box-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+
+        .cost-box-value.red { color: var(--red); }
+
+        .cost-difference {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .cost-difference-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--red);
+        }
+
+        .cost-difference-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--red);
+            margin: 0.5rem 0;
+        }
+
+        .cost-difference-sub {
+            color: rgba(239, 68, 68, 0.8);
+        }
+
+        .cost-details {
+            margin-top: 1.5rem;
+        }
+
+        .cost-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .cost-detail-row span:first-child {
+            color: var(--text-secondary);
+        }
+
+        .cost-detail-row span:last-child {
+            color: var(--red);
+            font-family: monospace;
+        }
+
+        /* Glossary Button */
+        .glossary-btn {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            background: linear-gradient(135deg, var(--amber), #ea580c);
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+            transition: transform 0.3s;
+            z-index: 50;
+        }
+
+        .glossary-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 100;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .glossary-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .glossary-term {
+            font-weight: 700;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .glossary-term.emerald { color: var(--emerald); }
+        .glossary-term.amber { color: var(--amber); }
+        .glossary-term.blue { color: var(--blue); }
+        .glossary-term.purple { color: var(--purple); }
+        .glossary-term.cyan { color: var(--cyan); }
+
+        .glossary-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .footer-brand {
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .footer-disclaimer {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Utility */
+        .space-y > * + * {
+            margin-top: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .font-mono {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.75rem;
+            }
+
+            .client-bar {
+                flex-direction: column;
+            }
+
+            .btn-group {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .timeline {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .timeline::before,
+            .timeline::after {
+                display: none;
+            }
+
+            .timeline-item {
+                width: 45%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-effects"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                Magalhães Negócios
+            </div>
+            <h1>Simulador de Investimento</h1>
+            <p>Análise completa de rentabilidade imobiliária para decisões inteligentes</p>
+        </header>
+
+        <!-- Client Bar -->
+        <div class="client-bar">
+            <div class="client-input-group">
+                <label>Nome do Cliente</label>
+                <input type="text" id="clienteNome" placeholder="Digite o nome do cliente">
+            </div>
+            <div class="client-input-group">
+                <label>Telefone</label>
+                <input type="tel" id="clienteTelefone" placeholder="(00) 00000-0000">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-whatsapp" onclick="compartilharWhatsApp()">📱 WhatsApp</button>
+                <button class="btn btn-pdf" onclick="gerarPDF()">📄 PDF</button>
+                <button class="btn btn-present" onclick="toggleFullscreen()">🖥️ Apresentar</button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="entrada" onclick="setTab('entrada')">💰 Entrada Parcelada</button>
+            <button class="tab-btn" data-tab="financiamento" onclick="setTab('financiamento')">🏦 Financiamento Obra</button>
+            <button class="tab-btn" data-tab="comparador" onclick="setTab('comparador')">⚖️ Comparador</button>
+            <button class="tab-btn" data-tab="custo" onclick="setTab('custo')">⏱️ Custo de Esperar</button>
+        </div>
+
+        <!-- Tab: Entrada Parcelada -->
+        <div id="tab-entrada" class="tab-content active">
+            <div class="grid grid-3">
+                <!-- Inputs -->
+                <div class="space-y">
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="card-title-icon">🏠</span>
+                            Dados do Imóvel
+                        </div>
+                        <div class="input-group">
+                            <label>Valor de Venda</label>
+                            <div class="input-wrapper">
+                                <span>R$</span>
+                                <input type="number" id="valorVenda" value="390000" step="1000" onchange="calcular()">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Avaliação Caixa</label>
+                            <div class="input-wrapper">
+                                <span>R$</span>
+                                <input type="number" id="avaliacaoCaixa" value="530000" step="1000" onchange="calcular()">
+                            </div>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Entrada</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="percentualEntrada" value="35" step="1" onchange="calcular()">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Prazo</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="prazoMeses" value="36" step="1" onchange="calcular()">
+                                    <span>meses</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="card-title-icon amber">📈</span>
+                            Índices e Taxas
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>INCC Anual</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="inccAnual" value="5.5" step="0.1" onchange="calcular()">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Valorização</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="valorizacaoAnual" value="8" step="0.5" onchange="calcular()">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>CDI</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="cdiAnual" value="10.5" step="0.1" onchange="calcular()">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Aluguel</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="rendimentoAluguel" value="0.5" step="0.05" onchange="calcular()">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Score -->
+                    <div class="card card-highlight">
+                        <div class="card-title">
+                            <span class="card-title-icon">🏆</span>
+                            Score do Investimento
+                        </div>
+                        <div class="score-container">
+                            <div class="score-circle">
+                                <svg width="120" height="120" viewBox="0 0 120 120">
+                                    <defs>
+                                        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#10b981"/>
+                                            <stop offset="100%" stop-color="#06b6d4"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="score-circle-bg" cx="60" cy="60" r="50"/>
+                                    <circle class="score-circle-progress" id="scoreCircle" cx="60" cy="60" r="50"/>
+                                </svg>
+                                <div class="score-value">
+                                    <div class="score-number" id="scoreValue">85</div>
+                                    <div class="score-max">de 100</div>
+                                </div>
+                            </div>
+                            <div class="score-label" id="scoreLabel">EXCELENTE</div>
+                            <div class="score-tip" id="scoreTip">Desconto acima da média do mercado!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="space-y">
+                    <!-- KPIs -->
+                    <div class="grid grid-4">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Total Investido</div>
+                            <div class="kpi-value" id="kpi-totalInvestido">R$ 412.680</div>
+                            <div class="kpi-sub amber" id="kpi-custoINCC">INCC: R$ 22.680</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Valor Final</div>
+                            <div class="kpi-value" id="kpi-valorFinal">R$ 667.748</div>
+                            <div class="kpi-sub" id="kpi-valorizacao">↑ +26%</div>
+                        </div>
+                        <div class="kpi-card highlight">
+                            <div class="kpi-label">Lucro Potencial</div>
+                            <div class="kpi-value emerald" id="kpi-lucro">R$ 255.068</div>
+                            <div class="kpi-sub" id="kpi-roi">ROI: 61.8%</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">vs CDI</div>
+                            <div class="kpi-value cyan" id="kpi-vantagem">+R$ 207.938</div>
+                            <div class="kpi-sub" style="color: var(--text-muted)">a mais que renda fixa</div>
+                        </div>
+                    </div>
+
+                    <!-- Chart -->
+                    <div class="card">
+                        <div class="card-title">
+                            <span style="width:12px;height:12px;background:var(--emerald);border-radius:50%;"></span>
+                            Evolução Patrimonial
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartEvolucao"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="card">
+                        <div class="card-title">
+                            <span style="width:12px;height:12px;background:var(--cyan);border-radius:50%;"></span>
+                            Timeline do Investimento
+                        </div>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-icon emerald">📝</div>
+                                <div class="timeline-label">HOJE</div>
+                                <div class="timeline-title">Contrato</div>
+                                <div class="timeline-value emerald" id="timeline-entrada">R$ 136.500</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-icon amber">💳</div>
+                                <div class="timeline-label">PARCELAS</div>
+                                <div class="timeline-title" id="timeline-parcelas">36x</div>
+                                <div class="timeline-value amber" id="timeline-parcelaValor">~R$ 7.600</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-icon blue">🔑</div>
+                                <div class="timeline-label">CHAVES</div>
+                                <div class="timeline-title">Entrega</div>
+                                <div class="timeline-value blue" id="timeline-valorChaves">R$ 667.748</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-icon gradient">💰</div>
+                                <div class="timeline-label">LUCRO</div>
+                                <div class="timeline-title">Potencial</div>
+                                <div class="timeline-value emerald" id="timeline-lucro">R$ 255.068</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scenarios -->
+                    <div class="scenario-grid">
+                        <div class="scenario-card emerald">
+                            <div class="scenario-header">
+                                <div class="scenario-title">🏠 VENDA</div>
+                                <span class="scenario-badge emerald" id="badge-prazo">36 meses</span>
+                            </div>
+                            <div class="scenario-rows">
+                                <div class="scenario-row">
+                                    <span>Investido</span>
+                                    <span class="font-mono" id="venda-investido">R$ 412.680</span>
+                                </div>
+                                <div class="scenario-row">
+                                    <span>Valor Venda</span>
+                                    <span class="font-mono text-emerald" id="venda-valor">R$ 667.748</span>
+                                </div>
+                            </div>
+                            <div class="scenario-result emerald">
+                                <div class="scenario-result-label emerald">LUCRO LÍQUIDO</div>
+                                <div class="scenario-result-value emerald" id="venda-lucro">R$ 255.068</div>
+                                <div class="scenario-result-sub emerald" id="venda-roi">ROI 61.8% | 17.4% a.a.</div>
+                            </div>
+                        </div>
+
+                        <div class="scenario-card blue">
+                            <div class="scenario-header">
+                                <div class="scenario-title">🔑 ALUGUEL</div>
+                                <span class="scenario-badge blue">Após chaves</span>
+                            </div>
+                            <div class="scenario-rows">
+                                <div class="scenario-row">
+                                    <span>Aluguel Bruto</span>
+                                    <span class="font-mono text-emerald" id="aluguel-bruto">R$ 3.339</span>
+                                </div>
+                                <div class="scenario-row">
+                                    <span>Custos</span>
+                                    <span class="font-mono text-red" id="aluguel-custos">- R$ 895</span>
+                                </div>
+                            </div>
+                            <div class="scenario-result blue">
+                                <div class="scenario-result-label blue">RENDA LÍQUIDA/MÊS</div>
+                                <div class="scenario-result-value blue" id="aluguel-liquido">R$ 2.444</div>
+                                <div class="scenario-result-sub blue" id="aluguel-metricas">Cap Rate 4.0% | Payback 15.4 anos</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Financiamento -->
+        <div id="tab-financiamento" class="tab-content">
+            <div class="grid grid-3">
+                <div class="space-y">
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="card-title-icon blue">🏦</span>
+                            Dados do Financiamento
+                        </div>
+                        <div class="input-group">
+                            <label>Valor do Imóvel</label>
+                            <div class="input-wrapper">
+                                <span>R$</span>
+                                <input type="number" id="fin-valorImovel" value="390000" step="1000" onchange="calcularFinanciamento()">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Avaliação / Valor Futuro</label>
+                            <div class="input-wrapper">
+                                <span>R$</span>
+                                <input type="number" id="fin-avaliacao" value="530000" step="1000" onchange="calcularFinanciamento()">
+                            </div>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Entrada</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="fin-entrada" value="20" step="1" onchange="calcularFinanciamento()">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Prazo Obra</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="fin-prazoObra" value="36" step="1" onchange="calcularFinanciamento()">
+                                    <span>meses</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="card-title-icon amber">💰</span>
+                            Taxas
+                        </div>
+                        <div class="input-group">
+                            <label>Taxa de Juros (a.a.)</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="fin-taxaJuros" value="10.5" step="0.1" onchange="calcularFinanciamento()">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Valorização Anual</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="fin-valorizacao" value="8" step="0.5" onchange="calcularFinanciamento()">
+                                <span>%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-color: rgba(245, 158, 11, 0.3);">
+                        <div class="card-title">
+                            <span>💡</span>
+                            Entenda os Juros de Obra
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Durante a construção, você paga <strong style="color: var(--amber);">juros apenas sobre o valor já liberado</strong>, não sobre o total.
+                        </p>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Exemplo: Se liberaram R$ 100.000, você paga juros só sobre esse valor.
+                        </p>
+                        <p style="font-size: 0.875rem; color: var(--emerald); font-weight: 500;">
+                            Enquanto isso, o imóvel valoriza sobre o valor TOTAL!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y">
+                    <div class="grid grid-4">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Valor Financiado</div>
+                            <div class="kpi-value" id="fin-kpi-financiado">R$ 312.000</div>
+                            <div class="kpi-sub" style="color: var(--text-muted)">80% do imóvel</div>
+                        </div>
+                        <div class="kpi-card" style="border-color: rgba(245, 158, 11, 0.3);">
+                            <div class="kpi-label">Juros de Obra</div>
+                            <div class="kpi-value amber" id="fin-kpi-jurosObra">R$ 52.416</div>
+                            <div class="kpi-sub amber">Total no período</div>
+                        </div>
+                        <div class="kpi-card highlight">
+                            <div class="kpi-label">Valorização</div>
+                            <div class="kpi-value emerald" id="fin-kpi-valorizacao">R$ 137.748</div>
+                            <div class="kpi-sub">Ganho no período</div>
+                        </div>
+                        <div class="kpi-card" style="border-color: rgba(6, 182, 212, 0.3);">
+                            <div class="kpi-label">Saldo Positivo</div>
+                            <div class="kpi-value cyan" id="fin-kpi-saldo">+R$ 85.332</div>
+                            <div class="kpi-sub" style="color: var(--cyan)">Valorização - Juros</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">📊 Juros vs Valorização (mês a mês)</div>
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="chartFinanciamento"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">📋 Evolução Detalhada</div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Período</th>
+                                        <th>% Lib.</th>
+                                        <th>Liberado</th>
+                                        <th>Juros/mês</th>
+                                        <th>Juros Acum.</th>
+                                        <th>Valor Imóvel</th>
+                                        <th>Valorização</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fin-tabela"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="conclusion-box">
+                        <div class="conclusion-icon">✅</div>
+                        <div class="conclusion-content">
+                            <h3>Vale a Pena Financiar na Obra?</h3>
+                            <p>Mesmo pagando <span id="fin-conclusao-juros" style="color: var(--amber); font-weight: 700;">R$ 52.416</span> de juros durante a obra, seu imóvel valorizou <span id="fin-conclusao-valor" style="color: var(--emerald); font-weight: 700;">R$ 137.748</span>.</p>
+                            <p>Saldo positivo de <span class="conclusion-highlight" id="fin-conclusao-saldo">R$ 85.332</span> - você GANHOU dinheiro mesmo pagando juros!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Comparador -->
+        <div id="tab-comparador" class="tab-content">
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-title">
+                    <span class="card-title-icon purple">⚖️</span>
+                    Compare até 3 Imóveis
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Preencha os dados de cada imóvel para comparar qual é o melhor investimento.</p>
+            </div>
+
+            <div class="comparator-grid">
+                <div class="comparator-card emerald">
+                    <div class="comparator-header emerald">
+                        <span class="comparator-num emerald">1</span>
+                        Imóvel A
+                    </div>
+                    <input type="text" class="comparator-input" id="comp1-nome" placeholder="Nome do empreendimento" onchange="calcularComparador()">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Valor Venda</label>
+                            <input type="number" class="comparator-input" id="comp1-valor" value="390000" onchange="calcularComparador()">
+                        </div>
+                        <div class="input-group">
+                            <label>Avaliação</label>
+                            <input type="number" class="comparator-input" id="comp1-avaliacao" value="530000" onchange="calcularComparador()">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Entrada %</label>
+                            <input type="number" class="comparator-input" id="comp1-entrada" value="35" onchange="calcularComparador()">
+                        </div>
+                        <div class="input-group">
+                            <label>Prazo (meses)</label>
+                            <input type="number" class="comparator-input" id="comp1-prazo" value="36" onchange="calcularComparador()">
+                        </div>
+                    </div>
+                    <div class="comparator-result emerald" id="comp1-resultado"></div>
+                </div>
+
+                <div class="comparator-card blue">
+                    <div class="comparator-header blue">
+                        <span class="comparator-num blue">2</span>
+                        Imóvel B
+                    </div>
+                    <input type="text" class="comparator-input" id="comp2-nome" placeholder="Nome do empreendimento" onchange="calcularComparador()">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Valor Venda</label>
+                            <input type="number" class="comparator-input" id="comp2-valor" value="420000" onchange="calcularComparador()">
+                        </div>
+                        <div class="input-group">
+                            <label>Avaliação</label>
+                            <input type="number" class="comparator-input" id="comp2-avaliacao" value="500000" onchange="calcularComparador()">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Entrada %</label>
+                            <input type="number" class="comparator-input" id="comp2-entrada" value="30" onchange="calcularComparador()">
+                        </div>
+                        <div class="input-group">
+                            <label>Prazo (meses)</label>
+                            <input type="number" class="comparator-input" id="comp2-prazo" value="36" onchange="calcularComparador()">
+                        </div>
+                    </div>
+                    <div class="comparator-result blue" id="comp2-resultado"></div>
+                </div>
+
+                <div class="comparator-card purple">
+                    <div class="comparator-header purple">
+                        <span class="comparator-num purple">3</span>
+                        Imóvel C
+                    </div>
+                    <input type="text" class="comparator-input" id="comp3-nome" placeholder="Nome do empreendimento" onchange="calcularComparador()">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Valor Venda</label>
+                            <input type="number" class="comparator-input" id="comp3-valor" value="350000" onchange="calcularComparador()">
+                        </div>
+                        <div class="input-group">
+                            <label>Avaliação</label>
+                            <input type="number" class="comparator-input" id="comp3-avaliacao" value="450000" onchange="calcularComparador()">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Entrada %</label>
+                            <input type="number" class="comparator-input" id="comp3-entrada" value="25" onchange="calcularComparador()">
+                        </div>
+                        <div class="input-group">
+                            <label>Prazo (meses)</label>
+                            <input type="number" class="comparator-input" id="comp3-prazo" value="30" onchange="calcularComparador()">
+                        </div>
+                    </div>
+                    <div class="comparator-result purple" id="comp3-resultado"></div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-title">🏆 Ranking dos Investimentos</div>
+                <div id="comparador-ranking"></div>
+            </div>
+        </div>
+
+        <!-- Tab: Custo de Esperar -->
+        <div id="tab-custo" class="tab-content">
+            <div class="grid grid-3">
+                <div class="space-y">
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="card-title-icon red">⏱️</span>
+                            Simule o Custo de Esperar
+                        </div>
+                        <div class="input-group">
+                            <label>Valor do Imóvel Hoje</label>
+                            <div class="input-wrapper">
+                                <span>R$</span>
+                                <input type="number" id="custo-valorHoje" value="390000" step="1000" onchange="calcularCusto()">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Valorização Mensal</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="custo-valorizacaoMensal" value="0.65" step="0.05" onchange="calcularCusto()">
+                                <span>% ao mês</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Quantos meses vai esperar?</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="custo-mesesEspera" value="6" step="1" onchange="calcularCusto()">
+                                <span>meses</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-color: rgba(239, 68, 68, 0.4);">
+                        <div class="card-title" style="color: var(--red);">
+                            <span>⚠️</span>
+                            Atenção!
+                        </div>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                            Enquanto você espera, o imóvel continua valorizando. Cada mês significa:
+                        </p>
+                        <ul style="list-style: none; font-size: 0.875rem;">
+                            <li style="color: var(--red); margin-bottom: 0.5rem;">• Pagar MAIS pelo mesmo imóvel</li>
+                            <li style="color: var(--red); margin-bottom: 0.5rem;">• Precisar de entrada MAIOR</li>
+                            <li style="color: var(--red); margin-bottom: 0.5rem;">• Parcelas mais ALTAS</li>
+                            <li style="color: var(--red);">• PERDER oportunidade de ganho</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="space-y">
+                    <div class="cost-result">
+                        <div class="cost-header">
+                            <h3>💸 O Custo da Sua Espera</h3>
+                        </div>
+
+                        <div class="cost-comparison">
+                            <div class="cost-box today">
+                                <div class="cost-box-label">Valor Hoje</div>
+                                <div class="cost-box-value" id="custo-hoje">R$ 390.000</div>
+                            </div>
+                            <div class="cost-box future">
+                                <div class="cost-box-label">Valor em 6 meses</div>
+                                <div class="cost-box-value red" id="custo-futuro">R$ 405.432</div>
+                            </div>
+                        </div>
+
+                        <div class="cost-difference">
+                            <div class="cost-difference-label">Você vai pagar a mais</div>
+                            <div class="cost-difference-value" id="custo-diferenca">R$ 15.432</div>
+                            <div class="cost-difference-sub" id="custo-porMes">≈ R$ 2.572 por mês de espera</div>
+                        </div>
+
+                        <div class="cost-details">
+                            <div class="cost-detail-row">
+                                <span>Entrada maior (35%)</span>
+                                <span id="custo-entradaMaior">+R$ 5.401</span>
+                            </div>
+                            <div class="cost-detail-row">
+                                <span>Financiamento maior</span>
+                                <span id="custo-financiamentoMaior">+R$ 10.031</span>
+                            </div>
+                            <div class="cost-detail-row">
+                                <span>Parcela mais alta</span>
+                                <span id="custo-parcelaMaior">+R$ 278/mês</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card card-highlight">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="font-size: 2.5rem;">💡</div>
+                            <div>
+                                <h4 style="color: var(--emerald); font-weight: 700;">Comprar AGORA é a melhor decisão!</h4>
+                                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">Quanto antes comprar, menos você paga e mais você ganha com a valorização.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-brand">Magalhães Negócios</div>
+            <div>Especialistas em Investimentos Imobiliários | Porto Alegre - RS</div>
+            <div class="footer-disclaimer">* Simulação baseada em projeções. Valores sujeitos a variações de mercado.</div>
+        </footer>
+    </div>
+
+    <!-- Glossary Button -->
+    <button class="glossary-btn" onclick="toggleGlossario()">📚</button>
+
+    <!-- Glossary Modal -->
+    <div id="modal-glossario" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📚 Glossário de Termos</h2>
+                <button class="modal-close" onclick="toggleGlossario()">×</button>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term emerald">EQUITY (Patrimônio Líquido)</div>
+                <div class="glossary-desc">Diferença entre valor de mercado do imóvel e quanto você deve. Comprando abaixo da avaliação, você já começa com patrimônio embutido.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term amber">INCC-DI</div>
+                <div class="glossary-desc">Índice Nacional de Custo da Construção. Corrige as parcelas de imóveis na planta, medindo variação dos custos da construção civil.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term emerald">ROI (Return on Investment)</div>
+                <div class="glossary-desc">Retorno sobre Investimento. ROI de 60% significa que para cada R$ 100 investidos, você terá R$ 160 de retorno.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term blue">JUROS DE OBRA</div>
+                <div class="glossary-desc">Juros pagos durante a construção, calculados APENAS sobre o valor já liberado pelo banco, não sobre o total do financiamento.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term blue">CAP RATE</div>
+                <div class="glossary-desc">Taxa de Capitalização. Retorno anual do aluguel sobre o valor do imóvel. Quanto maior, melhor o retorno com locação.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term purple">PAYBACK</div>
+                <div class="glossary-desc">Tempo necessário para recuperar todo o investimento através dos aluguéis.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term cyan">ALAVANCAGEM</div>
+                <div class="glossary-desc">Usar entrada menor para controlar ativo maior. Se o imóvel valoriza, seu ganho é proporcional ao valor total, não à entrada.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        let chartEvolucao = null;
+        let chartFinanciamento = null;
+
+        // Utilitários
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+        }
+
+        function formatPercent(value) {
+            return value.toFixed(1) + '%';
+        }
+
+        function getVal(id) {
+            return parseFloat(document.getElementById(id)?.value) || 0;
+        }
+
+        function setText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
+
+        function setHTML(id, html) {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = html;
+        }
+
+        // Tabs
+        function setTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+            if (tab === 'entrada') calcular();
+            if (tab === 'financiamento') calcularFinanciamento();
+            if (tab === 'comparador') calcularComparador();
+            if (tab === 'custo') calcularCusto();
+        }
+
+        // Cálculos - Entrada Parcelada
+        function calcular() {
+            const valorVenda = getVal('valorVenda');
+            const avaliacaoCaixa = getVal('avaliacaoCaixa');
+            const percentualEntrada = getVal('percentualEntrada');
+            const prazoMeses = getVal('prazoMeses');
+            const inccAnual = getVal('inccAnual');
+            const valorizacaoAnual = getVal('valorizacaoAnual');
+            const cdiAnual = getVal('cdiAnual');
+            const rendimentoAluguel = getVal('rendimentoAluguel');
+
+            const entrada = valorVenda * (percentualEntrada / 100);
+            const saldoFinanciar = valorVenda - entrada;
+            const parcelaBase = saldoFinanciar / prazoMeses;
+            const inccMensal = Math.pow(1 + inccAnual / 100, 1/12) - 1;
+            const valorizacaoMensal = Math.pow(1 + valorizacaoAnual / 100, 1/12) - 1;
+            const descontoInicial = ((avaliacaoCaixa - valorVenda) / avaliacaoCaixa) * 100;
+
+            let valorImovel = avaliacaoCaixa;
+            let totalPago = entrada;
+            const dadosGrafico = { labels: [], valorImovel: [], totalPago: [] };
+
+            for (let mes = 1; mes <= prazoMeses; mes++) {
+                const parcelaAtual = parcelaBase * Math.pow(1 + inccMensal, mes);
+                totalPago += parcelaAtual;
+                valorImovel *= (1 + valorizacaoMensal);
+                
+                if (mes % Math.ceil(prazoMeses / 6) === 0 || mes === 1) {
+                    dadosGrafico.labels.push('Mês ' + mes);
+                    dadosGrafico.valorImovel.push(Math.round(valorImovel));
+                    dadosGrafico.totalPago.push(Math.round(totalPago));
+                }
+            }
+
+            const totalComINCC = totalPago;
+            const custoINCC = totalComINCC - valorVenda;
+            const valorFinal = valorImovel;
+            const lucroVenda = valorFinal - totalComINCC;
+            const roiVenda = (lucroVenda / totalComINCC) * 100;
+            const roiAnual = (Math.pow(1 + roiVenda/100, 12/prazoMeses) - 1) * 100;
+            
+            const rendimentoCDI = entrada * Math.pow(1 + cdiAnual / 100, prazoMeses/12) - entrada;
+            const vantagem = lucroVenda - rendimentoCDI;
+
+            const aluguelMensal = valorFinal * (rendimentoAluguel / 100);
+            const custosMensais = (valorFinal * 0.008 / 12) + 450;
+            const aluguelLiquido = aluguelMensal - custosMensais;
+            const capRate = ((aluguelLiquido * 12 * 0.917) / valorFinal) * 100;
+            const payback = totalComINCC / (aluguelLiquido * 12 * 0.917);
+
+            const primeiraParcela = parcelaBase * (1 + inccMensal);
+            const ultimaParcela = parcelaBase * Math.pow(1 + inccMensal, prazoMeses);
+
+            // Atualizar UI
+            setText('kpi-totalInvestido', formatCurrency(totalComINCC));
+            setText('kpi-custoINCC', 'INCC: ' + formatCurrency(custoINCC));
+            setText('kpi-valorFinal', formatCurrency(valorFinal));
+            setText('kpi-valorizacao', '↑ +' + formatPercent((valorFinal/avaliacaoCaixa - 1) * 100));
+            setText('kpi-lucro', formatCurrency(lucroVenda));
+            setText('kpi-roi', 'ROI: ' + formatPercent(roiVenda));
+            setText('kpi-vantagem', '+' + formatCurrency(vantagem));
+
+            setText('timeline-entrada', formatCurrency(entrada));
+            setText('timeline-parcelas', prazoMeses + 'x');
+            setText('timeline-parcelaValor', '~' + formatCurrency((primeiraParcela + ultimaParcela) / 2));
+            setText('timeline-valorChaves', formatCurrency(valorFinal));
+            setText('timeline-lucro', formatCurrency(lucroVenda));
+            setText('badge-prazo', prazoMeses + ' meses');
+
+            setText('venda-investido', formatCurrency(totalComINCC));
+            setText('venda-valor', formatCurrency(valorFinal));
+            setText('venda-lucro', formatCurrency(lucroVenda));
+            setText('venda-roi', 'ROI ' + formatPercent(roiVenda) + ' | ' + formatPercent(roiAnual) + ' a.a.');
+
+            setText('aluguel-bruto', formatCurrency(aluguelMensal));
+            setText('aluguel-custos', '- ' + formatCurrency(custosMensais));
+            setText('aluguel-liquido', formatCurrency(aluguelLiquido));
+            setText('aluguel-metricas', 'Cap Rate ' + formatPercent(capRate) + ' | Payback ' + payback.toFixed(1) + ' anos');
+
+            calcularScore(descontoInicial, roiVenda, capRate);
+            atualizarGraficoEvolucao(dadosGrafico);
+        }
+
+        function calcularScore(desconto, roi, capRate) {
+            let score = Math.min(desconto * 2, 40) + Math.min(roi / 2, 40) + Math.min(capRate * 5, 20);
+            score = Math.round(Math.min(score, 100));
+
+            const circle = document.getElementById('scoreCircle');
+            const offset = 314 - (314 * score / 100);
+            circle.style.strokeDashoffset = offset;
+
+            setText('scoreValue', score);
+
+            let label = 'BOM', tip = 'Investimento dentro da média';
+            if (score >= 85) { label = 'EXCELENTE'; tip = 'Desconto e ROI acima da média!'; }
+            else if (score >= 70) { label = 'MUITO BOM'; tip = 'Oportunidade interessante'; }
+            else if (score < 50) { label = 'REGULAR'; tip = 'Negocie melhores condições'; }
+
+            setText('scoreLabel', label);
+            setText('scoreTip', tip);
+        }
+
+        function atualizarGraficoEvolucao(dados) {
+            const ctx = document.getElementById('chartEvolucao').getContext('2d');
+            if (chartEvolucao) chartEvolucao.destroy();
+
+            chartEvolucao = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dados.labels,
+                    datasets: [
+                        { label: 'Valor do Imóvel', data: dados.valorImovel, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4, borderWidth: 3 },
+                        { label: 'Total Investido', data: dados.totalPago, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4, borderWidth: 3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } },
+                        tooltip: { backgroundColor: 'rgba(15,23,42,0.9)', callbacks: { label: ctx => ctx.dataset.label + ': ' + formatCurrency(ctx.raw) } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                        y: { ticks: { color: '#64748b', callback: v => formatCurrency(v) }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+        }
+
+        // Financiamento
+        function calcularFinanciamento() {
+            const valorImovel = getVal('fin-valorImovel');
+            const avaliacao = getVal('fin-avaliacao');
+            const entradaPercent = getVal('fin-entrada');
+            const prazoObra = getVal('fin-prazoObra');
+            const taxaJuros = getVal('fin-taxaJuros');
+            const valorizacao = getVal('fin-valorizacao');
+
+            const entrada = valorImovel * (entradaPercent / 100);
+            const valorFinanciado = valorImovel - entrada;
+            const taxaMensal = Math.pow(1 + taxaJuros / 100, 1/12) - 1;
+            const valorizacaoMensal = Math.pow(1 + valorizacao / 100, 1/12) - 1;
+
+            const liberacoes = [
+                { mes: 1, percent: 10 }, { mes: Math.round(prazoObra * 0.2), percent: 20 },
+                { mes: Math.round(prazoObra * 0.4), percent: 20 }, { mes: Math.round(prazoObra * 0.6), percent: 20 },
+                { mes: Math.round(prazoObra * 0.8), percent: 20 }, { mes: prazoObra, percent: 10 }
+            ];
+
+            let valorLiberado = 0, jurosAcumulado = 0, valorAtual = avaliacao;
+            const dadosTabela = [], dadosGrafico = { labels: [], juros: [], valorizacao: [] };
+
+            for (let mes = 1; mes <= prazoObra; mes++) {
+                const lib = liberacoes.find(l => l.mes === mes);
+                if (lib) valorLiberado += valorFinanciado * (lib.percent / 100);
+
+                const jurosMes = valorLiberado * taxaMensal;
+                jurosAcumulado += jurosMes;
+                valorAtual *= (1 + valorizacaoMensal);
+
+                if (mes % 6 === 0 || mes === 1 || mes === prazoObra) {
+                    dadosTabela.push({ mes, percentLiberado: Math.round((valorLiberado / valorFinanciado) * 100), valorLiberado, jurosMes, jurosAcumulado, valorImovel: valorAtual, valorizacaoAcum: valorAtual - avaliacao });
+                    dadosGrafico.labels.push('Mês ' + mes);
+                    dadosGrafico.juros.push(Math.round(jurosAcumulado));
+                    dadosGrafico.valorizacao.push(Math.round(valorAtual - avaliacao));
+                }
+            }
+
+            const saldo = (valorAtual - avaliacao) - jurosAcumulado;
+
+            setText('fin-kpi-financiado', formatCurrency(valorFinanciado));
+            setText('fin-kpi-jurosObra', formatCurrency(jurosAcumulado));
+            setText('fin-kpi-valorizacao', formatCurrency(valorAtual - avaliacao));
+            setText('fin-kpi-saldo', (saldo >= 0 ? '+' : '') + formatCurrency(saldo));
+
+            let tabelaHTML = '';
+            dadosTabela.forEach(row => {
+                tabelaHTML += `<tr><td>Mês ${row.mes}</td><td>${row.percentLiberado}%</td><td>${formatCurrency(row.valorLiberado)}</td><td class="text-amber">${formatCurrency(row.jurosMes)}</td><td class="text-amber">${formatCurrency(row.jurosAcumulado)}</td><td>${formatCurrency(row.valorImovel)}</td><td class="text-emerald">+${formatCurrency(row.valorizacaoAcum)}</td></tr>`;
+            });
+            setHTML('fin-tabela', tabelaHTML);
+
+            setText('fin-conclusao-juros', formatCurrency(jurosAcumulado));
+            setText('fin-conclusao-valor', formatCurrency(valorAtual - avaliacao));
+            setText('fin-conclusao-saldo', formatCurrency(saldo));
+
+            const ctx = document.getElementById('chartFinanciamento').getContext('2d');
+            if (chartFinanciamento) chartFinanciamento.destroy();
+
+            chartFinanciamento = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dadosGrafico.labels,
+                    datasets: [
+                        { label: 'Juros Acumulados', data: dadosGrafico.juros, backgroundColor: 'rgba(245,158,11,0.7)', borderColor: '#f59e0b', borderWidth: 2 },
+                        { label: 'Valorização', data: dadosGrafico.valorizacao, backgroundColor: 'rgba(16,185,129,0.7)', borderColor: '#10b981', borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8' } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + formatCurrency(ctx.raw) } } },
+                    scales: { x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }, y: { ticks: { color: '#64748b', callback: v => formatCurrency(v) }, grid: { color: '#1e293b' } } }
+                }
+            });
+        }
+
+        // Comparador
+        function calcularComparador() {
+            const imoveis = [];
+            const inccMensal = Math.pow(1.055, 1/12) - 1;
+            const valorizacaoMensal = Math.pow(1.08, 1/12) - 1;
+            const cores = ['emerald', 'blue', 'purple'];
+
+            for (let i = 1; i <= 3; i++) {
+                const nome = document.getElementById(`comp${i}-nome`).value || `Imóvel ${String.fromCharCode(64 + i)}`;
+                const valor = getVal(`comp${i}-valor`);
+                const avaliacao = getVal(`comp${i}-avaliacao`);
+                const entradaPercent = getVal(`comp${i}-entrada`);
+                const prazo = getVal(`comp${i}-prazo`);
+
+                const entrada = valor * (entradaPercent / 100);
+                const parcelaBase = (valor - entrada) / prazo;
+
+                let totalPago = entrada, valorFinal = avaliacao;
+                for (let m = 1; m <= prazo; m++) {
+                    totalPago += parcelaBase * Math.pow(1 + inccMensal, m);
+                    valorFinal *= (1 + valorizacaoMensal);
+                }
+
+                const lucro = valorFinal - totalPago;
+                const roi = (lucro / totalPago) * 100;
+                const desconto = ((avaliacao - valor) / avaliacao) * 100;
+
+                imoveis.push({ i, nome, valor, entrada, lucro, roi, desconto, cor: cores[i-1] });
+
+                setHTML(`comp${i}-resultado`, `
+                    <p style="font-size:0.75rem;color:var(--text-muted)">Desconto: <span style="color:var(--${cores[i-1]});font-weight:700">${formatPercent(desconto)}</span></p>
+                    <p style="font-size:0.75rem;color:var(--text-muted)">Investido: <span style="color:var(--text-primary);font-weight:700">${formatCurrency(totalPago)}</span></p>
+                    <p style="font-size:1.125rem;font-weight:700;color:var(--${cores[i-1]});margin-top:0.5rem">Lucro: ${formatCurrency(lucro)}</p>
+                    <p style="font-size:0.75rem;color:var(--${cores[i-1]})">ROI: ${formatPercent(roi)}</p>
+                `);
+            }
+
+            imoveis.sort((a, b) => b.roi - a.roi);
+            const medalhas = ['🥇', '🥈', '🥉'];
+            let rankingHTML = '';
+
+            imoveis.forEach((im, idx) => {
+                rankingHTML += `
+                    <div class="ranking-item ${idx === 0 ? 'winner' : ''}">
+                        <div class="ranking-left">
+                            <span class="ranking-medal">${medalhas[idx]}</span>
+                            <div>
+                                <div class="ranking-name" style="color:var(--${im.cor})">${im.nome}</div>
+                                <div class="ranking-details">${formatCurrency(im.valor)} | Entrada ${formatCurrency(im.entrada)}</div>
+                            </div>
+                        </div>
+                        <div class="ranking-right">
+                            <div class="ranking-roi">${formatPercent(im.roi)} ROI</div>
+                            <div class="ranking-profit" style="color:var(--${im.cor})">Lucro: ${formatCurrency(im.lucro)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            setHTML('comparador-ranking', rankingHTML);
+        }
+
+        // Custo de Esperar
+        function calcularCusto() {
+            const valorHoje = getVal('custo-valorHoje');
+            const valorizacaoMensal = getVal('custo-valorizacaoMensal') / 100;
+            const mesesEspera = getVal('custo-mesesEspera');
+
+            const valorFuturo = valorHoje * Math.pow(1 + valorizacaoMensal, mesesEspera);
+            const diferenca = valorFuturo - valorHoje;
+            const custoPorMes = diferenca / mesesEspera;
+
+            const entradaHoje = valorHoje * 0.35;
+            const entradaFuturo = valorFuturo * 0.35;
+            const saldoHoje = valorHoje - entradaHoje;
+            const saldoFuturo = valorFuturo - entradaFuturo;
+
+            setText('custo-hoje', formatCurrency(valorHoje));
+            setText('custo-futuro', formatCurrency(valorFuturo));
+            setText('custo-diferenca', formatCurrency(diferenca));
+            setText('custo-porMes', '≈ ' + formatCurrency(custoPorMes) + ' por mês');
+            setText('custo-entradaMaior', '+' + formatCurrency(entradaFuturo - entradaHoje));
+            setText('custo-financiamentoMaior', '+' + formatCurrency(saldoFuturo - saldoHoje));
+            setText('custo-parcelaMaior', '+' + formatCurrency((saldoFuturo - saldoHoje) / 36) + '/mês');
+        }
+
+        // WhatsApp
+        function compartilharWhatsApp() {
+            const nome = document.getElementById('clienteNome').value || 'Cliente';
+            const msg = `🏠 *ANÁLISE DE INVESTIMENTO*\n\nOlá ${nome}!\n\n💰 Valor: ${document.getElementById('kpi-totalInvestido').textContent}\n📈 Lucro: ${document.getElementById('kpi-lucro').textContent}\n✅ ${document.getElementById('kpi-roi').textContent}\n\n_Magalhães Negócios_`;
+            window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+        }
+
+        // PDF
+        function gerarPDF() {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const nomeCliente = document.getElementById('clienteNome').value || 'Cliente';
+                const telefone = document.getElementById('clienteTelefone').value || '';
+                const hoje = new Date();
+                const mesAno = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                
+                // Valores
+                const valorVenda = parseFloat(document.getElementById('valorVenda').value) || 390000;
+                const avaliacao = parseFloat(document.getElementById('avaliacaoCaixa').value) || 530000;
+                const percentualEntrada = parseFloat(document.getElementById('percentualEntrada').value) || 35;
+                const prazo = parseInt(document.getElementById('prazoMeses').value) || 36;
+                const inccAnual = parseFloat(document.getElementById('inccAnual').value) || 5.5;
+                const valorizacaoAnual = parseFloat(document.getElementById('valorizacaoAnual').value) || 8;
+                const cdiAnual = parseFloat(document.getElementById('cdiAnual').value) || 10.5;
+                const percentAluguel = parseFloat(document.getElementById('rendimentoAluguel').value) || 0.5;
+                
+                // Cálculos
+                const entrada = valorVenda * percentualEntrada / 100;
+                const saldo = valorVenda - entrada;
+                const parcelaBase = saldo / prazo;
+                const desconto = ((avaliacao - valorVenda) / avaliacao * 100);
+                const equity = avaliacao - valorVenda;
+                
+                const inccMensal = Math.pow(1 + inccAnual/100, 1/12) - 1;
+                const valorizacaoMensal = Math.pow(1 + valorizacaoAnual/100, 1/12) - 1;
+                
+                // Calcular parcelas com INCC
+                let totalParcelas = 0;
+                let parcelas = [];
+                for (let i = 1; i <= prazo; i++) {
+                    const parcela = parcelaBase * Math.pow(1 + inccMensal, i);
+                    totalParcelas += parcela;
+                    if (i === 1 || i === 12 || i === 24 || i === prazo) {
+                        parcelas.push({ mes: i, valor: parcela, correcao: parcela - parcelaBase, acumulado: entrada + totalParcelas });
+                    }
+                }
+                
+                const totalInvestido = entrada + totalParcelas;
+                const custoINCC = totalParcelas - (parcelaBase * prazo);
+                const valorFinal = avaliacao * Math.pow(1 + valorizacaoMensal, prazo);
+                const lucro = valorFinal - totalInvestido;
+                const roiTotal = (lucro / totalInvestido * 100);
+                const roiAnual = (Math.pow(1 + roiTotal/100, 12/prazo) - 1) * 100;
+                
+                // CDI comparativo
+                const cdiMensal = Math.pow(1 + cdiAnual/100, 1/12) - 1;
+                const valorCDI = entrada * Math.pow(1 + cdiMensal, prazo);
+                const vantagemCDI = lucro - (valorCDI - entrada);
+                
+                // Aluguel
+                const aluguelBruto = valorFinal * percentAluguel / 100;
+                const iptu = valorFinal * 0.008 / 12;
+                const condominio = 450;
+                const aluguelLiquido = aluguelBruto - iptu - condominio;
+                const rendaAnual = aluguelLiquido * 11;
+                const capRate = (rendaAnual / valorFinal * 100);
+                const payback = totalInvestido / rendaAnual;
+                
+                // Cores
+                const bgEscuro = [15, 23, 42];
+                const bgCard = [30, 41, 59];
+                const bgCardLight = [40, 52, 72];
+                const azul = [59, 130, 246];
+                const dourado = [212, 165, 55];
+                const verde = [16, 185, 129];
+                const vermelho = [239, 68, 68];
+                const cyan = [6, 182, 212];
+                const branco = [255, 255, 255];
+                const cinzaClaro = [148, 163, 184];
+                const cinzaMedio = [100, 116, 139];
+                
+                // Função auxiliar para formatar moeda
+                const fmt = (v) => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                const fmtK = (v) => 'R$ ' + (v/1000).toFixed(0) + ' mil';
+                
+                // ==================== PÁGINA 1 ====================
+                doc.setFillColor(...bgEscuro);
+                doc.rect(0, 0, 210, 297, 'F');
+                
+                // Header
+                doc.setFillColor(...azul);
+                doc.rect(0, 0, 210, 42, 'F');
+                
+                doc.setTextColor(...branco);
+                doc.setFontSize(24);
+                doc.setFont('helvetica', 'bold');
+                doc.text('ANALISE DE INVESTIMENTO', 105, 16, { align: 'center' });
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Simulacao de Rentabilidade Imobiliaria', 105, 25, { align: 'center' });
+                doc.setFontSize(9);
+                doc.setTextColor(200, 220, 255);
+                doc.text('Projecao de ' + prazo + ' meses com valorizacao e cenarios de saida', 105, 33, { align: 'center' });
+                
+                // Data e cliente abaixo do header
+                let y = 50;
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(9);
+                doc.text(mesAno.charAt(0).toUpperCase() + mesAno.slice(1), 195, y, { align: 'right' });
+                
+                if (nomeCliente && nomeCliente !== 'Cliente') {
+                    doc.setTextColor(...branco);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Cliente: ' + nomeCliente, 15, y);
+                    if (telefone) {
+                        doc.setTextColor(...cinzaClaro);
+                        doc.setFont('helvetica', 'normal');
+                        doc.text('Tel: ' + telefone, 15, y + 5);
+                    }
+                }
+                
+                // ===== SEÇÃO: DADOS DO IMÓVEL =====
+                y = 62;
+                doc.setFillColor(...dourado);
+                doc.rect(15, y, 4, 7, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('DADOS DO IMOVEL', 22, y + 5);
+                
+                y += 12;
+                const boxW = 44;
+                const boxH = 32;
+                const gap = 2;
+                
+                // Box 1 - Valor Compra
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15, y, boxW, boxH, 2, 2, 'F');
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text('VALOR DE COMPRA', 18, y + 8);
+                doc.setTextColor(...branco);
+                doc.setFontSize(13);
+                doc.text(fmt(valorVenda), 18, y + 18);
+                doc.setTextColor(...verde);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text(desconto.toFixed(1) + '% abaixo da avaliacao', 18, y + 26);
+                
+                // Box 2 - Avaliação
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15 + boxW + gap, y, boxW, boxH, 2, 2, 'F');
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text('AVALIACAO CAIXA', 18 + boxW + gap, y + 8);
+                doc.setTextColor(...branco);
+                doc.setFontSize(13);
+                doc.text(fmt(avaliacao), 18 + boxW + gap, y + 18);
+                doc.setTextColor(...dourado);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Equity: ' + fmt(equity), 18 + boxW + gap, y + 26);
+                
+                // Box 3 - Entrada
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15 + (boxW + gap) * 2, y, boxW, boxH, 2, 2, 'F');
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text('ENTRADA (' + percentualEntrada + '%)', 18 + (boxW + gap) * 2, y + 8);
+                doc.setTextColor(...branco);
+                doc.setFontSize(13);
+                doc.text(fmt(entrada), 18 + (boxW + gap) * 2, y + 18);
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Saldo: ' + fmt(saldo), 18 + (boxW + gap) * 2, y + 26);
+                
+                // Box 4 - Parcela
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15 + (boxW + gap) * 3, y, boxW - 4, boxH, 2, 2, 'F');
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PARCELA BASE', 18 + (boxW + gap) * 3, y + 8);
+                doc.setTextColor(...branco);
+                doc.setFontSize(13);
+                doc.text(fmt(parcelaBase), 18 + (boxW + gap) * 3, y + 18);
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Sem correcao INCC', 18 + (boxW + gap) * 3, y + 26);
+                
+                // ===== SEÇÃO: EVOLUÇÃO DAS PARCELAS =====
+                y += 40;
+                doc.setFillColor(...dourado);
+                doc.rect(15, y, 4, 7, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('EVOLUCAO DAS PARCELAS COM INCC', 22, y + 5);
+                
+                y += 12;
+                // Cabeçalho tabela
+                doc.setFillColor(...bgCardLight);
+                doc.roundedRect(15, y, 180, 9, 1, 1, 'F');
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('MES', 25, y + 6);
+                doc.text('PARCELA', 65, y + 6);
+                doc.text('CORRECAO INCC', 105, y + 6);
+                doc.text('ACUMULADO', 160, y + 6);
+                
+                y += 11;
+                doc.setFont('helvetica', 'normal');
+                parcelas.forEach((p, i) => {
+                    if (i % 2 === 0) {
+                        doc.setFillColor(...bgCard);
+                        doc.rect(15, y - 4, 180, 9, 'F');
+                    }
+                    doc.setTextColor(...branco);
+                    doc.text('Mes ' + p.mes, 25, y + 2);
+                    doc.text(fmt(p.valor), 65, y + 2);
+                    doc.setTextColor(...vermelho);
+                    doc.text('+' + fmt(p.correcao), 105, y + 2);
+                    doc.setTextColor(...cyan);
+                    doc.text(fmt(p.acumulado), 160, y + 2);
+                    y += 9;
+                });
+                
+                // Resumo parcelas em linha
+                y += 5;
+                const miniW = 44;
+                
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15, y, miniW, 18, 2, 2, 'F');
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.text('1a Parcela', 18, y + 6);
+                doc.setTextColor(...branco);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text(fmt(parcelas[0].valor), 18, y + 13);
+                
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15 + miniW + 2, y, miniW, 18, 2, 2, 'F');
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text(prazo + 'a Parcela', 18 + miniW + 2, y + 6);
+                doc.setTextColor(...branco);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text(fmt(parcelas[parcelas.length-1].valor), 18 + miniW + 2, y + 13);
+                
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15 + (miniW + 2) * 2, y, miniW, 18, 2, 2, 'F');
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Custo INCC', 18 + (miniW + 2) * 2, y + 6);
+                doc.setTextColor(...vermelho);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text(fmt(custoINCC), 18 + (miniW + 2) * 2, y + 13);
+                
+                doc.setFillColor(...azul);
+                doc.roundedRect(15 + (miniW + 2) * 3, y, miniW - 2, 18, 2, 2, 'F');
+                doc.setTextColor(200, 220, 255);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Total Investido', 18 + (miniW + 2) * 3, y + 6);
+                doc.setTextColor(...branco);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text(fmt(totalInvestido), 18 + (miniW + 2) * 3, y + 13);
+                
+                // ===== SEÇÃO: CENÁRIO VENDA =====
+                y += 28;
+                doc.setFillColor(...dourado);
+                doc.rect(15, y, 4, 7, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('CENARIO 1: VENDA APOS ' + prazo + ' MESES', 22, y + 5);
+                
+                y += 12;
+                // Fluxo de caixa (esquerda)
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15, y, 90, 52, 2, 2, 'F');
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.text('FLUXO DE CAIXA', 20, y + 9);
+                
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(...branco);
+                doc.text('Entrada (' + percentualEntrada + '%)', 20, y + 20);
+                doc.setTextColor(...vermelho);
+                doc.text('- ' + fmtK(entrada), 85, y + 20, {align: 'right'});
+                
+                doc.setTextColor(...branco);
+                doc.text('Parcelas (' + prazo + 'x + INCC)', 20, y + 29);
+                doc.setTextColor(...vermelho);
+                doc.text('- ' + fmtK(totalParcelas), 85, y + 29, {align: 'right'});
+                
+                doc.setDrawColor(...cinzaMedio);
+                doc.setLineWidth(0.3);
+                doc.line(20, y + 33, 100, y + 33);
+                
+                doc.setTextColor(...branco);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Total Investido', 20, y + 40);
+                doc.text('= ' + fmtK(totalInvestido), 85, y + 40, {align: 'right'});
+                
+                doc.setTextColor(...verde);
+                doc.text('Valor de Venda', 20, y + 48);
+                doc.text('+ ' + fmtK(valorFinal), 85, y + 48, {align: 'right'});
+                
+                // Box Lucro (direita superior)
+                doc.setFillColor(...verde);
+                doc.roundedRect(110, y, 85, 26, 2, 2, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.text('LUCRO LIQUIDO', 152.5, y + 8, {align: 'center'});
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.text(fmt(lucro), 152.5, y + 21, {align: 'center'});
+                
+                // Métricas (direita inferior)
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(110, y + 28, 85, 24, 2, 2, 'F');
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('METRICAS DE RETORNO', 115, y + 36);
+                
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(...branco);
+                doc.text('ROI Total (' + prazo + ' meses)', 115, y + 44);
+                doc.setTextColor(...verde);
+                doc.setFont('helvetica', 'bold');
+                doc.text(roiTotal.toFixed(1) + '%', 165, y + 44);
+                
+                doc.setTextColor(...branco);
+                doc.setFont('helvetica', 'normal');
+                doc.text('ROI Anualizado', 115, y + 50);
+                doc.setFont('helvetica', 'bold');
+                doc.text(roiAnual.toFixed(1) + '% a.a.', 165, y + 50);
+                
+                // Vantagem vs CDI
+                doc.setTextColor(...cyan);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Vantagem vs CDI: +' + fmtK(vantagemCDI), 152.5, y + 58, {align: 'center'});
+                
+                // Footer página 1
+                doc.setDrawColor(...dourado);
+                doc.setLineWidth(0.5);
+                doc.line(15, 285, 195, 285);
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Magalhaes Negocios | Analise de Investimento Imobiliario', 15, 291);
+                doc.text('Pagina 1/4', 195, 291, {align: 'right'});
+                
+                // ==================== PÁGINA 2 ====================
+                doc.addPage();
+                doc.setFillColor(...bgEscuro);
+                doc.rect(0, 0, 210, 297, 'F');
+                
+                // ===== SEÇÃO: CENÁRIO ALUGUEL =====
+                y = 20;
+                doc.setFillColor(...dourado);
+                doc.rect(15, y, 4, 7, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('CENARIO 2: ALUGUEL APOS ENTREGA DAS CHAVES', 22, y + 5);
+                
+                y += 14;
+                // Receita mensal (esquerda)
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(15, y, 90, 48, 2, 2, 'F');
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.text('RECEITA MENSAL', 20, y + 9);
+                
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(...verde);
+                doc.text('Aluguel Bruto (' + percentAluguel + '%)', 20, y + 20);
+                doc.text('+ ' + fmt(aluguelBruto), 85, y + 20, {align: 'right'});
+                
+                doc.setTextColor(...vermelho);
+                doc.text('IPTU (mensal)', 20, y + 29);
+                doc.text('- ' + fmt(iptu), 85, y + 29, {align: 'right'});
+                
+                doc.text('Condominio', 20, y + 38);
+                doc.text('- ' + fmt(condominio), 85, y + 38, {align: 'right'});
+                
+                // Box Renda Líquida
+                doc.setFillColor(...cyan);
+                doc.roundedRect(110, y, 85, 26, 2, 2, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.text('RENDA LIQUIDA/MES', 152.5, y + 8, {align: 'center'});
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.text(fmt(aluguelLiquido), 152.5, y + 21, {align: 'center'});
+                
+                // Métricas aluguel
+                doc.setFillColor(...bgCard);
+                doc.roundedRect(110, y + 28, 85, 20, 2, 2, 'F');
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('METRICAS ANUAIS', 115, y + 36);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(...branco);
+                doc.text('Cap Rate', 115, y + 44);
+                doc.setTextColor(...cyan);
+                doc.setFont('helvetica', 'bold');
+                doc.text(capRate.toFixed(2) + '%', 145, y + 44);
+                doc.setTextColor(...branco);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Payback', 160, y + 44);
+                doc.setFont('helvetica', 'bold');
+                doc.text(payback.toFixed(1) + ' anos', 185, y + 44);
+                
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text('* Considerando 8,3% de vacancia (1 mes/ano)', 115, y + 52);
+                
+                // ===== SEÇÃO: PROJEÇÃO 5 ANOS =====
+                y += 60;
+                doc.setFillColor(...dourado);
+                doc.rect(15, y, 4, 7, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PROJECAO DE 5 ANOS DE ALUGUEL', 22, y + 5);
+                
+                y += 12;
+                // Cabeçalho tabela
+                doc.setFillColor(...bgCardLight);
+                doc.roundedRect(15, y, 180, 9, 1, 1, 'F');
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('ANO', 25, y + 6);
+                doc.text('ALUGUEL/MES', 55, y + 6);
+                doc.text('RENDA ANUAL', 95, y + 6);
+                doc.text('ACUMULADO', 135, y + 6);
+                doc.text('VALOR IMOVEL', 170, y + 6);
+                
+                y += 11;
+                let aluguelAcum = 0;
+                for (let ano = 1; ano <= 5; ano++) {
+                    const valorImovelAno = valorFinal * Math.pow(1 + valorizacaoAnual/100, ano);
+                    const aluguelAno = valorImovelAno * percentAluguel / 100;
+                    const rendaAnoLiq = (aluguelAno - iptu - condominio) * 11;
+                    aluguelAcum += rendaAnoLiq;
+                    
+                    if (ano % 2 === 1) {
+                        doc.setFillColor(...bgCard);
+                        doc.rect(15, y - 4, 180, 9, 'F');
+                    }
+                    doc.setTextColor(...branco);
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('Ano ' + ano, 25, y + 2);
+                    doc.text(fmt(aluguelAno), 55, y + 2);
+                    doc.setTextColor(...verde);
+                    doc.text(fmt(rendaAnoLiq), 95, y + 2);
+                    doc.setTextColor(...cyan);
+                    doc.text(fmt(aluguelAcum), 135, y + 2);
+                    doc.setTextColor(...branco);
+                    doc.text(fmt(valorImovelAno), 170, y + 2);
+                    y += 9;
+                }
+                
+                // ===== SEÇÃO: POR QUE É VANTAJOSO =====
+                y += 10;
+                doc.setFillColor(...dourado);
+                doc.rect(15, y, 4, 7, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('POR QUE ESTE INVESTIMENTO E VANTAJOSO?', 22, y + 5);
+                
+                y += 14;
+                const vantagens = [
+                    'Compra com ' + desconto.toFixed(0) + '% de desconto sobre avaliacao - equity imediato de ' + fmt(equity),
+                    'Alavancagem: controle ' + fmt(avaliacao) + ' com apenas ' + fmt(entrada) + ' de entrada',
+                    'ROI de ' + roiTotal.toFixed(1) + '% em ' + prazo + ' meses - supera CDI em ' + fmt(vantagemCDI),
+                    'Protecao contra inflacao - valorizacao supera custo do INCC',
+                    'Flexibilidade: venda com lucro ou gere renda passiva de ' + fmt(aluguelLiquido) + '/mes',
+                    'Imovel com avaliacao da Caixa garante potencial de revenda'
+                ];
+                
+                doc.setFontSize(9);
+                vantagens.forEach(v => {
+                    doc.setTextColor(...verde);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('>', 18, y);
+                    doc.setTextColor(...branco);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(v, 25, y);
+                    y += 10;
+                });
+                
+                // Resumo
+                y += 8;
+                doc.setFillColor(...verde);
+                doc.roundedRect(15, y, 180, 24, 2, 2, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('RESUMO DO INVESTIMENTO', 105, y + 8, {align: 'center'});
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Investimento Total: ' + fmt(totalInvestido) + '   |   Valor em ' + prazo + ' meses: ' + fmt(valorFinal) + '   |   Lucro Potencial: ' + fmt(lucro), 105, y + 18, {align: 'center'});
+                
+                // Disclaimer
+                y += 32;
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.text('* Projecoes baseadas em INCC ' + inccAnual + '% a.a. e valorizacao ' + valorizacaoAnual + '% a.a. Valores sujeitos a variacoes de mercado.', 15, y);
+                
+                // Footer página 2
+                doc.setDrawColor(...dourado);
+                doc.setLineWidth(0.5);
+                doc.line(15, 285, 195, 285);
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.text('Magalhaes Negocios | Analise de Investimento Imobiliario', 15, 291);
+                doc.text('Pagina 2/4', 195, 291, {align: 'right'});
+                
+                // ==================== PÁGINA 3 - GLOSSÁRIO ====================
+                doc.addPage();
+                doc.setFillColor(...bgEscuro);
+                doc.rect(0, 0, 210, 297, 'F');
+                
+                y = 20;
+                doc.setFillColor(...dourado);
+                doc.rect(15, y, 4, 7, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('GLOSSARIO DE TERMOS', 22, y + 5);
+                doc.setTextColor(...cinzaClaro);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Entenda os principais conceitos desta analise de investimento', 22, y + 12);
+                
+                const glossario = [
+                    { termo: 'EQUITY (Patrimonio Liquido)', desc: 'E a diferenca entre o valor de mercado do imovel e o quanto voce ainda deve. No seu caso, como esta comprando por ' + fmt(valorVenda) + ' um imovel avaliado em ' + fmt(avaliacao) + ', voce ja comeca com ' + fmt(equity) + ' de equity - ou seja, patrimonio "embutido" desde o primeiro dia.' },
+                    { termo: 'INCC-DI (Indice Nacional de Custo da Construcao)', desc: 'E o indice que corrige as parcelas de imoveis na planta. Mede a variacao dos custos da construcao civil (materiais, mao de obra, etc). Suas parcelas serao reajustadas mensalmente por este indice ate a entrega das chaves.' },
+                    { termo: 'ROI (Return on Investment / Retorno sobre Investimento)', desc: 'Indica quanto voce ganha em relacao ao que investiu. Um ROI de ' + roiTotal.toFixed(1) + '% significa que, para cada R$ 100 investidos, voce tera R$ ' + (100 + roiTotal).toFixed(0) + ' ao final. E a principal metrica para comparar investimentos.' },
+                    { termo: 'CAP RATE (Taxa de Capitalizacao)', desc: 'Mostra o retorno anual do aluguel em relacao ao valor do imovel. Um cap rate de ' + capRate.toFixed(1) + '% significa que o aluguel liquido anual representa ' + capRate.toFixed(1) + '% do valor do imovel. Quanto maior o cap rate, melhor o retorno com aluguel.' },
+                    { termo: 'PAYBACK (Tempo de Retorno)', desc: 'E o tempo necessario para recuperar todo o valor investido atraves dos alugueis. Se o payback e de ' + payback.toFixed(1) + ' anos, significa que em ' + payback.toFixed(1) + ' anos de aluguel voce tera recebido de volta tudo o que investiu.' },
+                    { termo: 'VACANCIA', desc: 'Periodo em que o imovel fica desocupado, sem gerar renda de aluguel. Calculamos 8,3% de vacancia (equivalente a 1 mes por ano), que e uma media conservadora para imoveis bem localizados.' },
+                    { termo: 'VALORIZACAO', desc: 'E o aumento do valor do imovel ao longo do tempo. Projetamos ' + valorizacaoAnual + '% ao ano com base no historico do mercado imobiliario em regioes metropolitanas. Essa valorizacao e o principal motor do lucro na venda.' },
+                    { termo: 'ALAVANCAGEM', desc: 'E usar um valor menor (entrada) para controlar um ativo de valor maior. Com ' + fmt(entrada) + ' de entrada, voce controla um imovel de ' + fmt(avaliacao) + '. Se o imovel valoriza 10%, seu patrimonio cresce muito mais que 10% sobre a entrada.' }
+                ];
+                
+                y += 20;
+                glossario.forEach((g, i) => {
+                    doc.setFillColor(...bgCard);
+                    doc.roundedRect(15, y, 180, 28, 2, 2, 'F');
+                    doc.setTextColor(...dourado);
+                    doc.setFontSize(9);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(g.termo, 20, y + 8);
+                    doc.setTextColor(...cinzaClaro);
+                    doc.setFontSize(7);
+                    doc.setFont('helvetica', 'normal');
+                    const linhas = doc.splitTextToSize(g.desc, 170);
+                    doc.text(linhas.slice(0, 3), 20, y + 15);
+                    y += 31;
+                });
+                
+                // Footer página 3
+                doc.setDrawColor(...dourado);
+                doc.setLineWidth(0.5);
+                doc.line(15, 285, 195, 285);
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.text('Magalhaes Negocios | Analise de Investimento Imobiliario', 15, 291);
+                doc.text('Pagina 3/4', 195, 291, {align: 'right'});
+                
+                // ==================== PÁGINA 4 - CONSIDERAÇÕES ====================
+                doc.addPage();
+                doc.setFillColor(...bgEscuro);
+                doc.rect(0, 0, 210, 297, 'F');
+                
+                y = 20;
+                doc.setFillColor(...dourado);
+                doc.rect(15, y, 4, 7, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('CONSIDERACOES IMPORTANTES', 22, y + 5);
+                
+                y += 18;
+                const consideracoes = [
+                    'Esta analise e uma simulacao baseada em projecoes de mercado e pode variar conforme condicoes economicas.',
+                    'O INCC utilizado (' + inccAnual + '% a.a.) e uma media historica. O indice real pode ser maior ou menor.',
+                    'A valorizacao projetada (' + valorizacaoAnual + '% a.a.) considera o historico de imoveis em regioes metropolitanas.',
+                    'Recomendamos consultar um contador para questoes tributarias na venda ou locacao do imovel.',
+                    'Os valores de condominio e IPTU sao estimativas e podem variar conforme o empreendimento.',
+                    'Rentabilidade passada nao garante rentabilidade futura.'
+                ];
+                
+                doc.setFontSize(9);
+                consideracoes.forEach(c => {
+                    doc.setTextColor(...cinzaClaro);
+                    doc.text('*', 20, y);
+                    doc.setTextColor(...branco);
+                    doc.setFont('helvetica', 'normal');
+                    const linhas = doc.splitTextToSize(c, 170);
+                    doc.text(linhas, 28, y);
+                    y += linhas.length * 5 + 8;
+                });
+                
+                // Agradecimento
+                y += 20;
+                doc.setTextColor(...branco);
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Obrigado pela confianca!', 105, y, {align: 'center'});
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(...cinzaClaro);
+                doc.text('Estamos a disposicao para esclarecer qualquer duvida sobre esta analise.', 105, y + 10, {align: 'center'});
+                
+                // Card final
+                y += 30;
+                doc.setFillColor(...dourado);
+                doc.roundedRect(45, y, 120, 35, 3, 3, 'F');
+                doc.setTextColor(...bgEscuro);
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Magalhaes Negocios', 105, y + 14, {align: 'center'});
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Especialistas em Investimentos Imobiliarios', 105, y + 23, {align: 'center'});
+                doc.text('Porto Alegre - RS', 105, y + 30, {align: 'center'});
+                
+                // Contato
+                y += 45;
+                doc.setFillColor(...azul);
+                doc.roundedRect(65, y, 80, 18, 2, 2, 'F');
+                doc.setTextColor(...branco);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Duvidas? Fale conosco!', 105, y + 11, {align: 'center'});
+                
+                // Footer página 4
+                doc.setDrawColor(...dourado);
+                doc.setLineWidth(0.5);
+                doc.line(15, 285, 195, 285);
+                doc.setTextColor(...cinzaMedio);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Magalhaes Negocios | Analise de Investimento Imobiliario', 15, 291);
+                doc.text('Pagina 4/4', 195, 291, {align: 'right'});
+                
+                // Salvar
+                const nomeArquivo = 'Analise_Investimento_' + nomeCliente.replace(/\s/g, '_') + '.pdf';
+                doc.save(nomeArquivo);
+                
+            } catch (error) {
+                alert('Erro ao gerar PDF: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        // Fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Glossário
+        function toggleGlossario() {
+            document.getElementById('modal-glossario').classList.toggle('active');
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('modal-glossario').addEventListener('click', function(e) {
+            if (e.target === this) toggleGlossario();
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            calcular();
+            calcularFinanciamento();
+            calcularComparador();
+            calcularCusto();
+        });
+    </script>
+</body>
+</html>
